@@ -1,5 +1,3 @@
-use hex;
-
 const SBOX: [u8; 256] = [
     0x63, 0x7c, 0x77, 0x7b, 0xf2, 0x6b, 0x6f, 0xc5, 0x30, 0x01, 0x67, 0x2b, 0xfe, 0xd7, 0xab, 0x76,
     0xca, 0x82, 0xc9, 0x7d, 0xfa, 0x59, 0x47, 0xf0, 0xad, 0xd4, 0xa2, 0xaf, 0x9c, 0xa4, 0x72, 0xc0,
@@ -38,9 +36,9 @@ const INVSBOX: [u8; 256] = [
     0x17, 0x2b, 0x04, 0x7e, 0xba, 0x77, 0xd6, 0x26, 0xe1, 0x69, 0x14, 0x63, 0x55, 0x21, 0x0c, 0x7d,
 ];
 
-const RCON: [u8; 10] = [0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1B, 0x36]; // Round constants
+const RCON: [u8; 10] = [0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1B, 0x36];
 
-pub fn aes_encrypt(state: &mut [u8; 16], key: &[u8; 16]) {
+pub fn block_encrypt(state: &mut [u8; 16], key: &[u8; 16]) {
     let round_keys = generate_round_keys(key);
     add_round_key(state, &round_keys[0]);
     for round in round_keys.iter().take(10).skip(1) {
@@ -54,7 +52,7 @@ pub fn aes_encrypt(state: &mut [u8; 16], key: &[u8; 16]) {
     add_round_key(state, &round_keys[10]);
 }
 
-pub fn aes_decrypt(state: &mut [u8; 16], key: &[u8; 16]) {
+pub fn block_decrypt(state: &mut [u8; 16], key: &[u8; 16]) {
     let round_keys = generate_round_keys(key);
     add_round_key(state, &round_keys[10]);
     for round in round_keys.iter().take(10).skip(1).rev() {
@@ -68,27 +66,24 @@ pub fn aes_decrypt(state: &mut [u8; 16], key: &[u8; 16]) {
     add_round_key(state, &round_keys[0]);
 }
 
-//works
 fn add_round_key(state: &mut [u8; 16], key: &[u8; 16]) {
     for (s, k) in state.iter_mut().zip(key.iter()) {
         *s ^= k;
     }
 }
 
-//asuming sbox is correct works
 fn sub_bytes(state: &mut [u8; 16]) {
     for byte in state.iter_mut() {
         *byte = SBOX[*byte as usize];
     }
 }
-//asuming sbox is correct works
+
 fn inv_sub_bytes(state: &mut [u8; 16]) {
     for byte in state.iter_mut() {
         *byte = INVSBOX[*byte as usize]
     }
 }
 
-//working
 fn shift_rows(state: &mut [u8; 16]) {
     let temp = *state;
     state[0] = temp[0];
@@ -147,7 +142,6 @@ fn mix_cols(state: &mut [u8; 16]) {
     }
 }
 
-//working
 fn inv_mix_cols(state: &mut [u8; 16]) {
     let temp = *state;
     for col in 0..4 {
@@ -170,19 +164,6 @@ fn inv_mix_cols(state: &mut [u8; 16]) {
     }
 }
 
-//this is working
-#[allow(dead_code)]
-fn calculate_rcon() -> Vec<u8> {
-    let mut rcon = vec![0x01];
-    let mut current = 0x01;
-    for _ in 1..10 {
-        current = gal_mul(current, 0x02);
-        rcon.push(current);
-    }
-    rcon
-}
-
-//this is correct i checked with standard
 fn generate_round_keys(key: &[u8; 16]) -> [[u8; 16]; 11] {
     let mut round_keys = [[0u8; 16]; 11];
     round_keys[0].copy_from_slice(key);
@@ -244,39 +225,36 @@ mod tests {
     use super::*;
     #[test]
     fn test_shift_rows() {
-        let state: [u8; 16] = [1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4];
-        let expected: [u8; 16] = [1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4];
-        let mut state_clone = state;
-        shift_rows(&mut state_clone);
-        assert_eq!(state_clone, expected);
-        inv_shift_rows(&mut state_clone);
-        assert_eq!(state, state_clone);
+        let mut state = [1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4];
+        let expected = [1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4];
+        let original = [1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4];
+        shift_rows(&mut state);
+        assert_eq!(state, expected);
+        inv_shift_rows(&mut state);
+        assert_eq!(state, original);
     }
     #[test]
     fn test_byte_sub() {
-        let state: [u8; 16] = [1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4];
-        let mut state_clone = state;
-        sub_bytes(&mut state_clone);
-        inv_sub_bytes(&mut state_clone);
-        assert_eq!(state, state_clone);
+        let original = [1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4];
+        let mut state = [1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4];
+        sub_bytes(&mut state);
+        inv_sub_bytes(&mut state);
+        assert_eq!(state, original);
     }
     #[test]
     fn gal_mul_test() {
-        //galios multiplication test
-        let result = gal_mul(2, 2);
-        assert_eq!(result, 4);
-        let result = gal_mul(6, 3);
-        assert_eq!(result, 10);
-        let result = gal_mul(7, 12);
-        assert_eq!(result, 36);
+        assert_eq!(gal_mul(2, 2), 4);
+        assert_eq!(gal_mul(6, 3), 10);
+        assert_eq!(gal_mul(7, 12), 36);
     }
     #[test]
     fn column_shift() {
-        let state: [u8; 16] = [1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4];
-        let mut state_copy = state;
-        mix_cols(&mut state_copy);
-        inv_mix_cols(&mut state_copy);
-        assert_eq!(state, state_copy);
+        //Note this works i calculated the matrix by hand
+        let mut state = [1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4];
+        let original = [1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4];
+        mix_cols(&mut state);
+        inv_mix_cols(&mut state);
+        assert_eq!(state, original);
     }
     #[test]
     fn test_aes128() {
@@ -292,8 +270,8 @@ mod tests {
             .unwrap()
             .try_into()
             .unwrap();
-        aes_encrypt(&mut plaintext, &key);
-        aes_decrypt(&mut plaintext, &key);
+        block_encrypt(&mut plaintext, &key);
+        block_decrypt(&mut plaintext, &key);
         assert_eq!(plaintext, expected);
     }
 }
