@@ -258,6 +258,7 @@ mod tests {
     }
     #[test]
     fn test_aes128() {
+        //values taken from test vector https://csrc.nist.gov/files/pubs/fips/197/final/docs/fips-197.pdf
         let key: [u8; 16] = hex::decode("000102030405060708090a0b0c0d0e0f")
             .unwrap()
             .try_into()
