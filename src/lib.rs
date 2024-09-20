@@ -222,6 +222,8 @@ pub fn pk7_unpad(data: &mut Vec<u8>) {
 
 #[cfg(test)]
 mod tests {
+    use hex_lit::hex;
+
     use super::*;
     #[test]
     fn test_shift_rows() {
@@ -242,13 +244,15 @@ mod tests {
         assert_eq!(state, original);
     }
     #[test]
-    fn gal_mul_test() {
+    fn test_gal_mul() {
+        //verified by hand ;(
         assert_eq!(gal_mul(2, 2), 4);
         assert_eq!(gal_mul(6, 3), 10);
         assert_eq!(gal_mul(7, 12), 36);
+        assert_eq!(gal_mul(12, 12), 80);
     }
     #[test]
-    fn column_shift() {
+    fn test_col_shift() {
         //Note this works i calculated the matrix by hand
         let mut state = [1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4];
         let original = [1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4];
@@ -257,22 +261,21 @@ mod tests {
         assert_eq!(state, original);
     }
     #[test]
-    fn test_aes128() {
+    fn test_encryption() {
         //values taken from test vector https://csrc.nist.gov/files/pubs/fips/197/final/docs/fips-197.pdf
-        let key: [u8; 16] = hex::decode("000102030405060708090a0b0c0d0e0f")
-            .unwrap()
-            .try_into()
-            .unwrap();
-        let mut plaintext: [u8; 16] = hex::decode("00112233445566778899aabbccddeeff")
-            .unwrap()
-            .try_into()
-            .unwrap();
-        let expected: [u8; 16] = hex::decode("00112233445566778899aabbccddeeff")
-            .unwrap()
-            .try_into()
-            .unwrap();
+        let key = hex!("000102030405060708090a0b0c0d0e0f");
+        let mut plaintext = hex!("00112233445566778899aabbccddeeff");
+        let expected = hex!("69c4e0d86a7b0430d8cdb78070b4c55a");
         block_encrypt(&mut plaintext, &key);
-        block_decrypt(&mut plaintext, &key);
         assert_eq!(plaintext, expected);
+    }
+    #[test]
+    fn test_decryption() {
+        //values taken from test vector https://csrc.nist.gov/files/pubs/fips/197/final/docs/fips-197.pdf
+        let key = hex!("000102030405060708090a0b0c0d0e0f");
+        let mut ciphertext = hex!("69c4e0d86a7b0430d8cdb78070b4c55a");
+        let expected = hex!("00112233445566778899aabbccddeeff");
+        block_decrypt(&mut ciphertext, &key);
+        assert_eq!(ciphertext, expected);
     }
 }
