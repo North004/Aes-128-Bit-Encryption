@@ -5,3 +5,4 @@ edition = "2021"
 
 [dependencies]
 hex = "0.4.3"
+hex_lit = "0.1.1"

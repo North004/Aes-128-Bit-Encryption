@@ -245,7 +245,7 @@ mod tests {
     }
     #[test]
     fn test_gal_mul() {
-        //verified by hand ;(
+        //verified by hand
         assert_eq!(gal_mul(2, 2), 4);
         assert_eq!(gal_mul(6, 3), 10);
         assert_eq!(gal_mul(7, 12), 36);
