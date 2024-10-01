@@ -20,4 +20,6 @@ nvim projetc/cargo.toml and add it as a local library
 Warning do not use for actual encryption this is not secure
 and does not feature any additional security features apart from basic Aes128 and is not secure against any timing or other methods of attack
 
+This is simply a Aes128 bit encrpytion in rust using with pkcs7 padding for me to undersand how this standard works and an oppertunity to learn some new maths to help me do it
+
 
